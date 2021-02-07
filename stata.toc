@@ -1,0 +1,3 @@
+v 1.0
+d Gorkem Aksaray, gaksaray@ku.edu.tr
+p 'GAUTIL': Collection of Stata utilities

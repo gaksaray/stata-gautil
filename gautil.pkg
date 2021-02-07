@@ -1,0 +1,18 @@
+v 1.0
+d 'GAUTIL': Collection of Stata utilities
+d
+d Collection of Stata utilities.
+d
+d Distribution-Date: 20210207
+d
+d Author: Gorkem Aksaray, Koc University
+d Support: gaksaray@ku.edu.tr
+d
+f compformat.ado
+f compformat.sthlp
+f dichotomize.ado
+f dichotomize.sthlp
+f maxvarlen.ado
+f maxvarlen.sthlp
+f purge.ado
+f purge.sthlp
