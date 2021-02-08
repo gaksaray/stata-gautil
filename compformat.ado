@@ -1,6 +1,6 @@
-*! version 1.0  07feb2021  Gorkem Aksaray
+*! version 1.0.1  08feb2021  Gorkem Aksaray
 
-capture program compformat
+capture program drop compformat
 program compformat
 	
 	quietly describe, varlist
