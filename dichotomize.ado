@@ -1,43 +1,62 @@
-*! version 1.1  09feb2021  Gorkem Aksaray
+*! version 1.1.1  09feb2021  Gorkem Aksaray
 
 capture program drop dichotomize
 program define dichotomize
 	syntax varname, GENerate(name) ///
 					[ ///
-					inlist(numlist) leq(numlist min=1 max=1) geq(numlist min=1 max=1) ///
+					INlist(numlist) leq(numlist min=1 max=1) geq(numlist min=1 max=1) ///
 					LABel(string) ///
 					first last after(varname) before(varname)]
 	
 	confirm new variable `generate'
 	
-	if "`inlist'" != "" & "`leq'" != "" {
-		di as err "inlist() may not be combined with leq()"
-		exit 198
-	}
-	if "`inlist'" != "" & "`geq'" != "" {
-		di as err "inlist() may not be combined with geq()"
-		exit 198
+	if "`inlist'" != "" {
+		if wordcount("`inlist'") > 250 { // exceeds the inlist() limit
+			di as err "number of inlist() arguments may not exceed 250"
+			exit 130
+		}
+		local inlist = subinstr("`inlist'", " ", ", ", .)
 	}
 	
+	// define base conditions (cond _i (inlist), _l(leq), and _g(geq))
 	if "`inlist'" != "" {
-		local inlist = subinstr("`inlist'", " ", ", ", .)
-		local cond inlist(`varlist', `inlist')
+		local cond_i inlist(`varlist', `inlist')
 	}
 	if "`leq'" != "" {
-		local cond `varlist' <= `leq'
+		local cond_l `varlist' <= `leq'
 	}
 	if "`geq'" != "" {
-		local cond `varlist' >= `geq'
-	}
-	if "`leq'" != "" & "`geq'" != "" {
-		cap assert `leq' >= `geq'
-		if _rc {
-			di as err "leq() may no be less than geq()"
-			exit 198
-		}
-		local cond inrange(`varlist', `geq', `leq')
+		local cond_g `varlist' >= `geq'
 	}
 	
+	// define range condition (cond _r (range))
+	if "`leq'" != "" & "`geq'" == "" {
+		local cond_r `cond_l'
+	}
+	if "`leq'" == "" & "`geq'" != "" {
+		local cond_r `cond_g'
+	}
+	if "`leq'" != "" & "`geq'" != "" {
+		if `leq' < `geq' {
+			local cond_r `cond_l' | `cond_g'
+		}
+		if `leq' >= `geq' {
+			local cond_r inrange(`varlist', `geq', `leq')
+		}
+	}
+	
+	// define end condition (i.e., paste conditions)
+	if "`cond_i'" != "" & "`cond_r'" == "" {
+		local cond `cond_i'
+	}
+	if "`cond_i'" == "" & "`cond_r'" != "" {
+		local cond `cond_r'
+	}
+	if "`cond_i'" != "" & "`cond_r'" != "" {
+		local cond `cond_i' | `cond_r'
+	}
+	
+	// order error messages
 	if "`before'" != "" & "`after'" != "" {
 		di as err "before() may not be combined with after"
 		exit 198
@@ -63,6 +82,7 @@ program define dichotomize
 		exit 198
 	}
 	
+	// set placement (order)
 	local placement ", after(`varlist')" // default placement is after dichotomized variable
 	if "`before'" != "" {
 		local placement ", before(`before')"
@@ -77,6 +97,7 @@ program define dichotomize
 		local placement ", last"
 	}
 	
+	// create the dichotomous variable
 	generate `generate' = cond(`cond', 1, 0) if !missing(`varlist')
 	if "`label'" != "" {
 		label variable `generate' `"`label'"'
